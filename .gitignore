@@ -1,0 +1,6 @@
+venv/
+draft/
+__pycache__/
+.idea/
+.git/
+settings.py
