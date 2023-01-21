@@ -6,8 +6,9 @@ from tqdm import tqdm
 class YaUploader:
     HOST = 'https://cloud-api.yandex.net'
 
-    def __init__(self, token):
+    def __init__(self, token, list_photos):
         self.token = token
+        self.list_photos = list_photos
 
     def get_headers(self):
         return {
@@ -36,20 +37,25 @@ class YaUploader:
         return path
 
     def upload(self):
-
-        uri = '/v1/disk/resources/upload/'
-        request_url = self.HOST + uri
+        list_photos_for_json = []
         path = self.create_folder()
+        for photo in tqdm(self.list_photos):
+            file_name = photo['file_name']
+            size = photo['size']
+            link_for_upload = photo['max_size_link']
+            uri = '/v1/disk/resources/upload/'
+            request_url = self.HOST + uri
+            params = {'path': f'/{path}/' + file_name + '.jpg', 'url': link_for_upload}
+            response = requests.post(request_url, params=params, headers=self.get_headers())
 
-        with open('Result.json', 'r') as f:
-            result = (f.read())
-            result = json.loads(result)
-            for i in tqdm(result):
-                file_name = i['file_name']
-                link_for_upload = i['max_size_link']
-                params = {'path': f'/{path}/' + file_name + '.jpg', 'url': link_for_upload}
-                response = requests.post(request_url, params=params, headers=self.get_headers())
-
-                if response.status_code != 202:
-                    print('Ошибка загрузки')
+            if response.status_code != 202:
+                print('Ошибка загрузки')
+            list_photos_for_json.append(
+                {
+                    'file_name': file_name,
+                    'size': size
+                }
+            )
+        with open('Result.json', 'w') as file:
+            json.dump(list_photos_for_json, file)
         print('Загружено')
